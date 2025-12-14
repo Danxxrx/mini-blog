@@ -1,0 +1,22 @@
+# Visual Studio
+.vs/
+
+# Node.js
+node_modules/
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db-wal
+*.db-shm
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+Thumbs.db
+.DS_Store
