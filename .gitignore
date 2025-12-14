@@ -4,32 +4,25 @@
 *.suo
 *.userosscache
 *.sln.docstates
+
+# ===== VS Code =====
 .vscode/
 
-# ===== Node.js =====
+# ===== Node =====
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# ===== OS =====
 .DS_Store
 Thumbs.db
-
-# ===== Env / secrets =====
-.env
-.env.*
 
 # ===== SQLite / DB files =====
 *.db
 *.sqlite
 *.sqlite3
-*.sqlite3-journal
+*.sqlite-journal
 *.db-wal
 *.db-shm
-
-# ===== Build / dist =====
-dist/
-build/
-out/
-
-# =====
