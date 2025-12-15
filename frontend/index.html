@@ -45,15 +45,19 @@
     input:focus, textarea:focus { border-color: #b8b8ff; box-shadow: 0 0 0 3px rgba(80,80,255,.12); }
 
     .row { display:flex; gap: 10px; align-items:center; margin-top: 12px; flex-wrap: wrap; }
-    button {
+    button, .linkbtn {
       border: 0;
       border-radius: 12px;
       padding: 10px 14px;
       font-weight: 600;
       cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .btn-primary { background: #111; color:#fff; }
-    .btn-secondary { background: #fff; border: 1px solid #e2e2e8; }
+    .btn-secondary { background: #fff; border: 1px solid #e2e2e8; color:#111; }
     .hint { margin-top: 10px; color:#666; font-size: 13px; }
     .msg { margin-top: 10px; font-weight: 700; }
     .msg.ok { color:#0a8a2a; }
@@ -80,7 +84,7 @@
       <h1>Mini-Blog</h1>
       <p>Udostępniaj artykuły i dołącz do dyskusji.</p>
       <div class="status">
-        Backend: <code id="backendUrl">http://localhost:3000</code> — <span id="backendState">sprawdzam…</span>
+        Backend: <code id="backendUrl">/</code> — <span id="backendState">sprawdzam…</span>
       </div>
     </div>
 
@@ -120,14 +124,18 @@
   </div>
 
   <script>
-    const API = "http://localhost:3000";
+    const API = "";
 
     const elBackendState = document.getElementById("backendState");
+    const elBackendUrl = document.getElementById("backendUrl");
     const elTitle = document.getElementById("title");
     const elContent = document.getElementById("content");
     const elMsg = document.getElementById("msg");
     const elPosts = document.getElementById("posts");
     const elCount = document.getElementById("count");
+
+    elBackendUrl.textContent = location.origin;
+    elBackendUrl.title = location.origin;
 
     function showMsg(text, ok = true) {
       elMsg.style.display = "block";
@@ -138,9 +146,10 @@
 
     async function checkBackend() {
       try {
-        const res = await fetch(API + "/posts");
+        const res = await fetch(API + "/api/health");
         if (!res.ok) throw new Error("HTTP " + res.status);
-        elBackendState.innerHTML = '<span class="ok">OK</span> (Mini-Blog)';
+        const data = await res.json().catch(() => ({}));
+        elBackendState.innerHTML = '<span class="ok">OK</span> (' + (data.name || "Mini-Blog") + ')';
       } catch (e) {
         elBackendState.innerHTML = '<span class="err">BŁĄD</span> (nie działa backend)';
       }
@@ -172,8 +181,7 @@
             <div class="postMeta">#${esc(id)} • ${created || "—"}</div>
             <div class="postBody">${content ? content : "…"}</div>
             <div class="row">
-              <button class="btn-secondary" disabled>Komentarze</button>
-              <button class="btn-secondary" disabled>Odśwież komentarze</button>
+              <a class="linkbtn btn-secondary" href="post.html?id=${encodeURIComponent(id)}">Otwórz</a>
             </div>
           </div>
         `;
@@ -184,7 +192,6 @@
       const res = await fetch(API + "/posts");
       if (!res.ok) throw new Error("Nie mogę pobrać postów");
       const data = await res.json();
-      // поддержка разных форматов: либо массив, либо {posts:[...]}
       const posts = Array.isArray(data) ? data : (data.posts ?? []);
       renderPosts(posts);
     }
@@ -195,6 +202,11 @@
 
       if (!title) {
         showMsg("Podaj tytuł.", false);
+        return;
+      }
+
+      if (!content) {
+        showMsg("Podaj treść.", false);
         return;
       }
 
@@ -209,12 +221,9 @@
         return;
       }
 
-     
-      
       await loadPosts();
       elTitle.value = "";
       elContent.value = "";
-
       showMsg("Post dodany ✅", true);
     }
 

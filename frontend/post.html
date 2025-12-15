@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini-Blog — post</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;margin:0;background:#f6f7fb;color:#111}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    a{color:#1f4bd8;text-decoration:none}
+    .card{background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.06);padding:18px;margin:14px 0}
+    .muted{color:#667085}
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    .btn{border:1px solid #ddd;background:#fff;border-radius:999px;padding:10px 14px;cursor:pointer}
+    .btn.primary{background:#111;color:#fff;border-color:#111}
+    input,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;font:inherit}
+    textarea{min-height:90px;resize:vertical}
+    .comment{border-top:1px solid #eee;padding-top:12px;margin-top:12px}
+    .reply{margin-left:22px;border-left:3px solid #f0f0f0;padding-left:12px;margin-top:10px}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <a href="index.html">← Wróć</a>
+      <h1 id="title" style="margin:10px 0 4px">…</h1>
+      <div class="muted small" id="meta">…</div>
+      <p id="content" style="white-space:pre-wrap;margin-top:14px">…</p>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 10px">Komentarze</h2>
+
+      <div class="row">
+        <div style="flex:1;min-width:280px">
+          <label class="small muted">Autor (opcjonalnie)</label>
+          <input id="cAuthor" placeholder="np. Jan" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label class="small muted">Treść</label>
+        <textarea id="cContent" placeholder="Napisz komentarz..."></textarea>
+      </div>
+
+      <div style="margin-top:10px" class="row">
+        <button class="btn primary" id="addComment">Dodaj komentarz</button>
+        <button class="btn" id="reload">Odśwież</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px">Lista komentarzy</h3>
+      <div id="comments">Ładowanie…</div>
+    </div>
+  </div>
+
+<script>
+const API = ""; // same origin
+const qs = new URLSearchParams(location.search);
+const postId = Number(qs.get("id"));
+
+const elTitle = document.getElementById("title");
+const elMeta = document.getElementById("meta");
+const elContent = document.getElementById("content");
+const elComments = document.getElementById("comments");
+
+function fmtDate(s){ try{ return new Date(s).toLocaleString("pl-PL"); } catch { return s; } }
+
+async function loadPost(){
+  const r = await fetch(`${API}/posts/${postId}`);
+  if(!r.ok){ elTitle.textContent="Nie znaleziono posta"; elContent.textContent=""; return; }
+  const p = await r.json();
+  elTitle.textContent = p.title;
+  elMeta.textContent = `#${p.id} • ${fmtDate(p.created_at)}`;
+  elContent.textContent = p.content;
+}
+
+function escapeHtml(str){
+  return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+}
+
+function renderComments(flat){
+  // one-level nesting: top-level = parent_id null, replies = parent_id = comment.id
+  const tops = flat.filter(c => c.parent_id === null);
+  const byParent = new Map();
+  for(const c of flat){
+    if(c.parent_id !== null){
+      if(!byParent.has(c.parent_id)) byParent.set(c.parent_id, []);
+      byParent.get(c.parent_id).push(c);
+    }
+  }
+
+  if(tops.length === 0){
+    elComments.innerHTML = `<div class="muted">Brak komentarzy.</div>`;
+    return;
+  }
+
+  elComments.innerHTML = tops.map(c => {
+    const replies = (byParent.get(c.id) || []);
+    const author = c.author ? escapeHtml(c.author) : "Anonim";
+    const replyHtml = replies.map(r => {
+      const ra = r.author ? escapeHtml(r.author) : "Anonim";
+      return `
+        <div class="reply">
+          <div class="small muted">${ra} • ${fmtDate(r.created_at)}</div>
+          <div style="white-space:pre-wrap">${escapeHtml(r.content)}</div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <div class="comment" data-id="${c.id}">
+        <div class="small muted"><b>${author}</b> • ${fmtDate(c.created_at)}</div>
+        <div style="white-space:pre-wrap;margin-top:6px">${escapeHtml(c.content)}</div>
+
+        <div style="margin-top:10px">
+          <button class="btn small" onclick="toggleReply(${c.id})">Odpowiedz</button>
+        </div>
+
+        <div id="replyBox-${c.id}" style="display:none;margin-top:10px">
+          <div class="row">
+            <div style="flex:1;min-width:220px">
+              <label class="small muted">Autor (opcjonalnie)</label>
+              <input id="rAuthor-${c.id}" placeholder="np. Anna" />
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <label class="small muted">Treść odpowiedzi</label>
+            <textarea id="rContent-${c.id}" placeholder="Napisz odpowiedź..."></textarea>
+          </div>
+          <div style="margin-top:8px" class="row">
+            <button class="btn primary" onclick="sendReply(${c.id})">Dodaj odpowiedź</button>
+            <button class="btn" onclick="toggleReply(${c.id})">Anuluj</button>
+          </div>
+        </div>
+
+        ${replyHtml}
+      </div>
+    `;
+  }).join("");
+}
+
+window.toggleReply = (id) => {
+  const box = document.getElementById(`replyBox-${id}`);
+  box.style.display = (box.style.display === "none" ? "block" : "none");
+};
+
+window.sendReply = async (parentId) => {
+  const author = document.getElementById(`rAuthor-${parentId}`).value.trim();
+  const content = document.getElementById(`rContent-${parentId}`).value.trim();
+  if(!content){ alert("Treść jest wymagana"); return; }
+
+  const r = await fetch(`${API}/posts/${postId}/comments`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ author: author || null, content, parentId })
+  });
+
+  if(!r.ok){
+    const err = await r.json().catch(()=>({}));
+    alert("Błąd: " + (err.error || r.status));
+    return;
+  }
+
+  await loadComments();
+  toggleReply(parentId);
+};
+
+async function loadComments(){
+  const r = await fetch(`${API}/posts/${postId}/comments`);
+  const list = await r.json().catch(()=>[]);
+  renderComments(Array.isArray(list) ? list : []);
+}
+
+document.getElementById("addComment").addEventListener("click", async () => {
+  const author = document.getElementById("cAuthor").value.trim();
+  const content = document.getElementById("cContent").value.trim();
+  if(!content){ alert("Treść jest wymagana"); return; }
+
+  const r = await fetch(`${API}/posts/${postId}/comments`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ author: author || null, content })
+  });
+
+  if(!r.ok){
+    const err = await r.json().catch(()=>({}));
+    alert("Błąd: " + (err.error || r.status));
+    return;
+  }
+
+  document.getElementById("cContent").value = "";
+  await loadComments();
+});
+
+document.getElementById("reload").addEventListener("click", loadComments);
+
+if(!Number.isFinite(postId)){
+  elTitle.textContent = "Błędne ID posta";
+  elContent.textContent = "";
+  elComments.textContent = "";
+} else {
+  loadPost();
+  loadComments();
+}
+</script>
+</body>
+</html>
