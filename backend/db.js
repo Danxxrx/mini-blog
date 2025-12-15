@@ -1,7 +1,7 @@
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
-const DB_PATH = path.join(__dirname, "data.sqlite3");
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data.sqlite3");
 const db = new sqlite3.Database(DB_PATH);
 
 function run(sql, params = []) {
@@ -31,6 +31,11 @@ function all(sql, params = []) {
   });
 }
 
+async function columnExists(table, column) {
+  const info = await all(`PRAGMA table_info(${table});`);
+  return info.some((c) => c.name === column);
+}
+
 async function init() {
   await run("PRAGMA foreign_keys = ON;");
 
@@ -47,12 +52,38 @@ async function init() {
     CREATE TABLE IF NOT EXISTS comments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       post_id INTEGER NOT NULL,
+      parent_id INTEGER NULL,
       author TEXT,
       content TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+      FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+      FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
     );
   `);
+
+  const hasParent = await columnExists("comments", "parent_id");
+  if (!hasParent) {
+    await run(`
+      CREATE TABLE IF NOT EXISTS comments_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER NOT NULL,
+        parent_id INTEGER NULL,
+        author TEXT,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+      );
+    `);
+
+    await run(`
+      INSERT INTO comments_new (id, post_id, author, content, created_at)
+      SELECT id, post_id, author, content, created_at FROM comments;
+    `);
+
+    await run(`DROP TABLE comments;`);
+    await run(`ALTER TABLE comments_new RENAME TO comments;`);
+  }
 }
 
 module.exports = { db, run, get, all, init, DB_PATH };
