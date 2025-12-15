@@ -14,8 +14,8 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
 });
 
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, name: "Mini-Blog" });
+app.get("/health", (req, res) => {
+  res.json({ ok: true, service: "Mini-Blog" });
 });
 
 app.get("/posts", async (req, res) => {
@@ -40,6 +40,7 @@ app.get("/posts/:id", async (req, res) => {
     );
 
     if (!post) return res.status(404).json({ error: "POST_NOT_FOUND" });
+
     res.json(post);
   } catch {
     res.status(500).json({ error: "DB_ERROR" });
@@ -48,11 +49,11 @@ app.get("/posts/:id", async (req, res) => {
 
 app.post("/posts", async (req, res) => {
   try {
-    const title = String(req.body?.title ?? "").trim();
-    const content = String(req.body?.content ?? "").trim();
+    const title = String(req.body.title || "").trim();
+    const content = String(req.body.content || "").trim();
 
     if (!title || !content) {
-      return res.status(400).json({ error: "TITLE_AND_CONTENT_REQUIRED" });
+      return res.status(400).json({ error: "VALIDATION_ERROR" });
     }
 
     const result = await run(
@@ -77,10 +78,7 @@ app.get("/posts/:id/comments", async (req, res) => {
     if (!Number.isFinite(postId)) return res.status(400).json({ error: "BAD_ID" });
 
     const comments = await all(
-      `SELECT id, post_id, parent_id, author, content, created_at
-       FROM comments
-       WHERE post_id = ?
-       ORDER BY id DESC`,
+      "SELECT id, post_id, parent_id, author, content, created_at FROM comments WHERE post_id = ? ORDER BY created_at ASC, id ASC",
       [postId]
     );
 
@@ -95,26 +93,53 @@ app.post("/posts/:id/comments", async (req, res) => {
     const postId = Number(req.params.id);
     if (!Number.isFinite(postId)) return res.status(400).json({ error: "BAD_ID" });
 
-    const content = String(req.body?.content ?? "").trim();
-    const author = String(req.body?.author ?? "").trim() || null;
+    const author = String(req.body.author || "").trim() || "Anonim";
+    const content = String(req.body.content || "").trim();
+    const parentIdRaw = req.body.parent_id;
 
-    const parentIdRaw = req.body?.parentId ?? null;
     const parentId =
       parentIdRaw === null || parentIdRaw === undefined || parentIdRaw === ""
         ? null
         : Number(parentIdRaw);
 
-    if (!content) return res.status(400).json({ error: "CONTENT_REQUIRED" });
+    if (!content) return res.status(400).json({ error: "VALIDATION_ERROR" });
+    if (parentId !== null && !Number.isFinite(parentId)) {
+      return res.status(400).json({ error: "BAD_PARENT_ID" });
+    }
 
-    const postExists = await get("SELECT id FROM posts WHERE id = ?", [postId]);
-    if (!postExists) return res.status(404).json({ error: "POST_NOT_FOUND" });
+    const exists = await get("SELECT id FROM posts WHERE id = ?", [postId]);
+    if (!exists) return res.status(404).json({ error: "POST_NOT_FOUND" });
 
     if (parentId !== null) {
-      if (!Number.isFinite(parentId)) return res.status(400).json({ error: "BAD_PARENT_ID" });
-
       const parent = await get(
-        "SELECT id, post_id, parent_id FROM comments WHERE id = ?",
-        [parentId]
+        "SELECT id FROM comments WHERE id = ? AND post_id = ?",
+        [parentId, postId]
       );
+      if (!parent) return res.status(404).json({ error: "PARENT_NOT_FOUND" });
+    }
 
-      if (!parent) return res.status(404).
+    const result = await run(
+      "INSERT INTO comments (post_id, parent_id, author, content) VALUES (?, ?, ?, ?)",
+      [postId, parentId, author, content]
+    );
+
+    const comment = await get(
+      "SELECT id, post_id, parent_id, author, content, created_at FROM comments WHERE id = ?",
+      [result.lastID]
+    );
+
+    res.status(201).json(comment);
+  } catch {
+    res.status(500).json({ error: "DB_ERROR" });
+  }
+});
+
+init()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(() => {
+    process.exit(1);
+  });
