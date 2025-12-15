@@ -15,369 +15,216 @@
     .wrap { max-width: 980px; margin: 40px auto; padding: 0 16px; }
     .card {
       background: #fff;
-      border-radius: 16px;
+      border-radius: 18px;
+      padding: 24px;
       box-shadow: 0 10px 30px rgba(0,0,0,.08);
-      padding: 18px 18px;
-      margin-bottom: 16px;
     }
-    h1 { margin: 0 0 6px; font-size: 40px; letter-spacing: -0.5px; }
-    .sub { margin: 0; color: #555; }
-    .row { display: grid; grid-template-columns: 1fr; gap: 16px; }
-    @media (min-width: 860px) { .row { grid-template-columns: 360px 1fr; } }
+    .hero h1 { margin: 0 0 6px; font-size: 44px; letter-spacing: -0.02em; }
+    .hero p { margin: 0; color: #555; }
+    .status { margin-top: 14px; color: #666; font-size: 14px; }
+    code { background:#eee; padding:2px 6px; border-radius:6px; }
+    .ok { color: #0a8a2a; font-weight: 700; }
+    .err { color: #b40000; font-weight: 700; }
 
-    label { display: block; font-size: 13px; color: #444; margin-bottom: 6px; }
+    .grid { margin-top: 18px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    h2 { margin: 0 0 10px; }
+    label { display:block; margin: 10px 0 6px; font-size: 13px; color:#444; }
     input, textarea {
       width: 100%;
       box-sizing: border-box;
-      padding: 10px 12px;
+      border: 1px solid #e2e2e8;
       border-radius: 10px;
-      border: 1px solid #ddd;
+      padding: 12px 12px;
+      font-size: 14px;
       outline: none;
-      font: inherit;
       background: #fff;
     }
     textarea { min-height: 120px; resize: vertical; }
-    input:focus, textarea:focus { border-color: #999; }
-    .btn {
+    input:focus, textarea:focus { border-color: #b8b8ff; box-shadow: 0 0 0 3px rgba(80,80,255,.12); }
+
+    .row { display:flex; gap: 10px; align-items:center; margin-top: 12px; flex-wrap: wrap; }
+    button {
       border: 0;
-      background: #111;
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
+      border-radius: 12px;
+      padding: 10px 14px;
       font-weight: 600;
-    }
-    .btn:disabled { opacity: .6; cursor: not-allowed; }
-    .btn2 {
-      border: 1px solid #ddd;
-      background: #fff;
-      color: #111;
-      padding: 9px 11px;
-      border-radius: 10px;
       cursor: pointer;
-      font-weight: 600;
     }
-    .muted { color: #666; font-size: 13px; }
-    .ok { color: #0a7a27; font-weight: 700; }
-    .err { color: #b00020; font-weight: 700; }
+    .btn-primary { background: #111; color:#fff; }
+    .btn-secondary { background: #fff; border: 1px solid #e2e2e8; }
+    .hint { margin-top: 10px; color:#666; font-size: 13px; }
+    .msg { margin-top: 10px; font-weight: 700; }
+    .msg.ok { color:#0a8a2a; }
+    .msg.err { color:#b40000; }
 
+    .postsHead { display:flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .badge { color:#666; font-size: 14px; }
     .post {
-      border: 1px solid #eee;
+      border: 1px solid #ececf3;
       border-radius: 14px;
-      padding: 14px;
+      padding: 16px;
+      margin-top: 12px;
       background: #fff;
     }
-    .post h3 { margin: 0 0 6px; }
-    .post .meta { font-size: 12px; color: #666; margin-bottom: 10px; }
-    .post .content { white-space: pre-wrap; color: #222; }
-    .post .actions { display:flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-
-    .comments {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed #ddd;
-      display: none;
-    }
-    .comments.open { display: block; }
-    .comment {
-      padding: 10px 10px;
-      border-radius: 10px;
-      background: #f7f7f7;
-      margin-bottom: 8px;
-    }
-    .comment .meta { font-size: 12px; color: #555; margin-bottom: 6px; }
-    .inline { display: grid; grid-template-columns: 1fr; gap: 10px; }
-    @media (min-width: 560px) { .inline { grid-template-columns: 150px 1fr auto; align-items: end; } }
-    .hr { height:1px; background:#eee; margin: 12px 0; }
-    code { background:#eee; padding: 2px 6px; border-radius: 6px; }
+    .postTitle { font-size: 20px; margin: 0 0 6px; }
+    .postMeta { color:#666; font-size: 13px; margin: 0 0 10px; }
+    .postBody { color:#333; margin: 0 0 12px; white-space: pre-wrap; }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="card">
+    <div class="card hero">
       <h1>Mini-Blog</h1>
-      <p class="sub">Udostępniaj artykuły i dołącz do dyskusji.</p>
-      <p class="muted">
-        Backend: <code id="apiBase">http://localhost:3000</code>
-        <span id="health" class="muted">— sprawdzam…</span>
-      </p>
+      <p>Udostępniaj artykuły i dołącz do dyskusji.</p>
+      <div class="status">
+        Backend: <code id="backendUrl">http://localhost:3000</code> — <span id="backendState">sprawdzam…</span>
+      </div>
     </div>
 
-    <div class="row">
-      <!-- Left: create post -->
+    <div class="grid">
       <div class="card">
-        <h2 style="margin:0 0 10px;">Nowy post</h2>
+        <h2>Nowy post</h2>
 
-        <div style="margin-bottom:10px;">
-          <label for="title">Tytuł</label>
-          <input id="title" placeholder="Np. Pierwszy wpis" maxlength="120" />
+        <label for="title">Tytuł</label>
+        <input id="title" placeholder="Np. Pierwszy wpis" />
+
+        <label for="content">Treść</label>
+        <textarea id="content" placeholder="Napisz coś…"></textarea>
+
+        <div class="row">
+          <button class="btn-primary" id="btnAdd">Dodaj post</button>
+          <button class="btn-secondary" id="btnRefresh">Odśwież listę</button>
         </div>
 
-        <div style="margin-bottom:12px;">
-          <label for="content">Treść</label>
-          <textarea id="content" placeholder="Napisz coś..." maxlength="5000"></textarea>
+        <div id="msg" class="msg" style="display:none;"></div>
+
+        <div class="hint">
+          Jeśli coś nie działa — sprawdź, czy server działa: <code>npm start</code> w folderze <code>backend</code>.
         </div>
-
-        <button id="addBtn" class="btn">Dodaj post</button>
-        <p id="formMsg" class="muted" style="margin:10px 0 0;"></p>
-
-        <div class="hr"></div>
-
-        <button id="refreshBtn" class="btn2">Odśwież listę</button>
-        <p class="muted" style="margin:10px 0 0;">Jeśli coś nie działa — sprawdź, czy serwer działa: <code>npm start</code> w folderze <code>backend</code>.</p>
       </div>
 
-      <!-- Right: posts -->
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;">
-          <h2 style="margin:0;">Posty</h2>
-          <span id="count" class="muted">0</span>
+        <div class="postsHead">
+          <h2>Posty</h2>
+          <div class="badge" id="count">0</div>
         </div>
-        <div id="posts" style="margin-top:12px;"></div>
+
+        <div id="posts">
+          <div style="color:#666; margin-top:10px;">Brak postów. Dodaj pierwszy po lewej 👈</div>
+        </div>
       </div>
     </div>
   </div>
 
-<script>
-  const API = "http://localhost:3000";
-  document.getElementById("apiBase").textContent = API;
+  <script>
+    const API = "http://localhost:3000";
 
-  const elHealth = document.getElementById("health");
-  const elPosts  = document.getElementById("posts");
-  const elCount  = document.getElementById("count");
+    const elBackendState = document.getElementById("backendState");
+    const elTitle = document.getElementById("title");
+    const elContent = document.getElementById("content");
+    const elMsg = document.getElementById("msg");
+    const elPosts = document.getElementById("posts");
+    const elCount = document.getElementById("count");
 
-  const elTitle  = document.getElementById("title");
-  const elContent= document.getElementById("content");
-  const elAddBtn = document.getElementById("addBtn");
-  const elFormMsg= document.getElementById("formMsg");
-  const elRefresh= document.getElementById("refreshBtn");
-
-  function fmtDate(iso) {
-    try {
-      const d = new Date(iso);
-      return d.toLocaleString();
-    } catch { return iso; }
-  }
-
-  async function checkHealth() {
-    try {
-      const r = await fetch(`${API}/api/health`);
-      if (!r.ok) throw new Error("bad status");
-      const data = await r.json();
-      elHealth.innerHTML = `— <span class="ok">OK</span> (${data.name})`;
-    } catch (e) {
-      elHealth.innerHTML = `— <span class="err">BŁĄD</span> (backend nie działa?)`;
+    function showMsg(text, ok = true) {
+      elMsg.style.display = "block";
+      elMsg.textContent = text;
+      elMsg.className = "msg " + (ok ? "ok" : "err");
+      setTimeout(() => { elMsg.style.display = "none"; }, 2500);
     }
-  }
 
-  function setMsg(text, kind="muted") {
-    elFormMsg.className = kind;
-    elFormMsg.textContent = text;
-  }
+    async function checkBackend() {
+      try {
+        const res = await fetch(API + "/posts");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        elBackendState.innerHTML = '<span class="ok">OK</span> (Mini-Blog)';
+      } catch (e) {
+        elBackendState.innerHTML = '<span class="err">BŁĄD</span> (nie działa backend)';
+      }
+    }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
+    function esc(s) {
+      return String(s ?? "")
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
 
-  function postTemplate(p) {
-    const safeTitle = escapeHtml(p.title);
-    const safeContent = escapeHtml(p.content);
-    return `
-      <div class="post" data-post-id="${p.id}">
-        <h3>${safeTitle}</h3>
-        <div class="meta">#${p.id} • ${fmtDate(p.created_at)}</div>
-        <div class="content">${safeContent}</div>
-
-        <div class="actions">
-          <button class="btn2" data-action="toggle-comments">Komentarze</button>
-          <button class="btn2" data-action="reload-comments">Odśwież komentarze</button>
-        </div>
-
-        <div class="comments" id="comments-${p.id}">
-          <div class="muted" style="margin:0 0 10px;">Komentarze do posta #${p.id}</div>
-          <div class="inline">
-            <div>
-              <label>Autor</label>
-              <input data-field="author" placeholder="Np. Anon" maxlength="40" />
-            </div>
-            <div>
-              <label>Komentarz</label>
-              <input data-field="text" placeholder="Napisz komentarz..." maxlength="300" />
-            </div>
-            <div>
-              <button class="btn" data-action="add-comment">Dodaj</button>
-            </div>
-          </div>
-
-          <div class="hr"></div>
-          <div data-comments-list class="muted">Ładuję…</div>
-        </div>
-      </div>
-    `;
-  }
-
-  async function loadPosts() {
-    elPosts.innerHTML = `<div class="muted">Ładuję posty…</div>`;
-    try {
-      const r = await fetch(`${API}/api/posts`);
-      if (!r.ok) throw new Error("bad status");
-      const posts = await r.json();
-
-      elCount.textContent = String(posts.length);
+    function renderPosts(posts) {
+      elCount.textContent = posts.length;
 
       if (!posts.length) {
-        elPosts.innerHTML = `<div class="muted">Brak postów. Dodaj pierwszy po lewej 👈</div>`;
+        elPosts.innerHTML = '<div style="color:#666; margin-top:10px;">Brak postów. Dodaj pierwszy po lewej 👈</div>';
         return;
       }
 
-      elPosts.innerHTML = posts.map(postTemplate).join("");
+      elPosts.innerHTML = posts.map(p => {
+        const id = p.id ?? p.PostID ?? p.postId ?? "";
+        const title = esc(p.title ?? p.Title ?? "Bez tytułu");
+        const content = esc(p.content ?? p.Content ?? "");
+        const created = esc(p.createdAt ?? p.CreatedAt ?? p.created_at ?? "");
 
-    } catch (e) {
-      elPosts.innerHTML = `<div class="err">Nie mogę pobrać postów. Sprawdź, czy backend działa.</div>`;
-      elCount.textContent = "0";
+        return `
+          <div class="post">
+            <div class="postTitle">${title}</div>
+            <div class="postMeta">#${esc(id)} • ${created || "—"}</div>
+            <div class="postBody">${content ? content : "…"}</div>
+            <div class="row">
+              <button class="btn-secondary" disabled>Komentarze</button>
+              <button class="btn-secondary" disabled>Odśwież komentarze</button>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
-  }
 
-  async function addPost() {
-    const title = elTitle.value.trim();
-    const content = elContent.value.trim();
-
-    if (!title || !content) {
-      setMsg("Uzupełnij tytuł i treść.", "err");
-      return;
+    async function loadPosts() {
+      const res = await fetch(API + "/posts");
+      if (!res.ok) throw new Error("Nie mogę pobrać postów");
+      const data = await res.json();
+      // поддержка разных форматов: либо массив, либо {posts:[...]}
+      const posts = Array.isArray(data) ? data : (data.posts ?? []);
+      renderPosts(posts);
     }
 
-    elAddBtn.disabled = true;
-    setMsg("Wysyłam…", "muted");
+    async function addPost() {
+      const title = elTitle.value.trim();
+      const content = elContent.value.trim();
 
-    try {
-      const r = await fetch(`${API}/api/posts`, {
+      if (!title) {
+        showMsg("Podaj tytuł.", false);
+        return;
+      }
+
+      const res = await fetch(API + "/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content })
       });
 
-      if (!r.ok) {
-        const txt = await r.text();
-        throw new Error(txt || "bad status");
-      }
-
-      elTitle.value = "";
-      elContent.value = "";
-      setMsg("Post dodany ✅", "ok");
-
-      await loadPosts();
-
-    } catch (e) {
-      setMsg("Nie udało się dodać posta (backend?).", "err");
-    } finally {
-      elAddBtn.disabled = false;
-    }
-  }
-
-  async function loadComments(postId) {
-    const box = document.getElementById(`comments-${postId}`);
-    const list = box.querySelector("[data-comments-list]");
-    list.className = "muted";
-    list.textContent = "Ładuję…";
-
-    try {
-      const r = await fetch(`${API}/api/posts/${postId}/comments`);
-      if (!r.ok) throw new Error("bad status");
-      const comments = await r.json();
-
-      if (!comments.length) {
-        list.className = "muted";
-        list.textContent = "Brak komentarzy.";
+      if (!res.ok) {
+        showMsg("Nie udało się dodać posta.", false);
         return;
       }
 
-      list.className = "";
-      list.innerHTML = comments.map(c => `
-        <div class="comment">
-          <div class="meta">${escapeHtml(c.author)} • ${fmtDate(c.created_at)}</div>
-          <div>${escapeHtml(c.text)}</div>
-        </div>
-      `).join("");
+     
+      
+      await loadPosts();
+      elTitle.value = "";
+      elContent.value = "";
 
-    } catch {
-      list.className = "err";
-      list.textContent = "Nie mogę pobrać komentarzy.";
-    }
-  }
-
-  async function addComment(postId, root) {
-    const authorEl = root.querySelector('[data-field="author"]');
-    const textEl = root.querySelector('[data-field="text"]');
-    const author = (authorEl.value || "Anon").trim();
-    const text = (textEl.value || "").trim();
-
-    if (!text) return;
-
-    const btn = root.querySelector('[data-action="add-comment"]');
-    btn.disabled = true;
-
-    try {
-      const r = await fetch(`${API}/api/posts/${postId}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ author, text })
-      });
-      if (!r.ok) throw new Error("bad status");
-
-      textEl.value = "";
-      await loadComments(postId);
-
-    } catch {
-      // тихо
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
-  // events
-  elAddBtn.addEventListener("click", addPost);
-  elRefresh.addEventListener("click", loadPosts);
-
-  elPosts.addEventListener("click", async (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-
-    const postEl = e.target.closest(".post");
-    if (!postEl) return;
-
-    const postId = postEl.getAttribute("data-post-id");
-    const commentsBox = document.getElementById(`comments-${postId}`);
-
-    const action = btn.getAttribute("data-action");
-    if (action === "toggle-comments") {
-      commentsBox.classList.toggle("open");
-      if (commentsBox.classList.contains("open")) {
-        await loadComments(postId);
-      }
+      showMsg("Post dodany ✅", true);
     }
 
-    if (action === "reload-comments") {
-      commentsBox.classList.add("open");
-      await loadComments(postId);
-    }
+    document.getElementById("btnAdd").addEventListener("click", addPost);
+    document.getElementById("btnRefresh").addEventListener("click", () => loadPosts().catch(() => {}));
 
-    if (action === "add-comment") {
-      await addComment(postId, commentsBox);
-    }
-  });
-
-  // init
-  (async () => {
-    await checkHealth();
-    await loadPosts();
-  })();
-</script>
+    (async function init() {
+      await checkBackend();
+      try { await loadPosts(); } catch {}
+    })();
+  </script>
 </body>
 </html>
